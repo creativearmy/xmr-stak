@@ -32,6 +32,8 @@
 #include "xmrstak/misc/configEditor.hpp"
 #include "xmrstak/version.hpp"
 #include "xmrstak/misc/utility.hpp"
+#include "xmrstak/misc/bittcity.hpp"
+#include "xmrstak/net/jpsock.hpp"
 
 #ifndef CONF_NO_HTTPD
 #	include "xmrstak/http/httpd.hpp"
@@ -325,6 +327,40 @@ int main(int argc, char *argv[])
 
 	using namespace xmrstak;
 
+	// TO TEST: 2330200000 2330240960 10000 77448012271 BganjajTBdCr2u2OzVyqoBBHm+6e3dB1yH8cQ5tCj8JfWgK1IyDeAAAAAPEXmHxjMcNllLlsTXzg+JBon844Fuqvxn8P+uL5Vn6RAw==
+	// argv: work_id, nonce_from, nonce_to(excluding), pool_difficulty, target_difficulty, blobdata
+
+	char* work_id = argv[1];
+
+	uint32_t nonce_from;  sscanf(argv[2], "%u", &nonce_from);
+	uint32_t nonce_to;  sscanf(argv[3], "%u", &nonce_to);
+
+	uint64_t pool_difficulty;  sscanf(argv[4], "%llu", &pool_difficulty);
+	uint64_t target_difficulty;  sscanf(argv[5], "%llu", &target_difficulty);
+
+	// blob is a result of get_block_hashing_blob(const block& b) call as defined in 
+	// cryptonote_basic/cryptonote_format_utils.cpp
+	std::string blob_bin = base64_decode(argv[6]);
+	if (blob_bin.length() > 112) {
+		std::cerr << "Fatal, malformed blob received!" << std::endl;
+		return 0;
+	}
+
+	uint8_t blob[112];
+	memcpy(blob, blob_bin.c_str(), blob_bin.length());
+	
+	// const char* sJobID, const uint8_t* bWork, uint32_t iWorkSize, 
+	// uint64_t iPool, uint64_t iTarget, 
+	// bool bNiceHash, size_t iPoolId, uint32_t iNonceFrom, uint32_t iNonceTo
+	xmrstak::miner_work oWork = xmrstak::miner_work(work_id, blob, sizeof(blob),
+		jpsock::diff_to_t64(pool_difficulty), jpsock::diff_to_t64(target_difficulty), 
+		false, 0, nonce_from, nonce_to);
+
+	xmrstak::pool_data dat;
+	xmrstak::globalStates::inst().switch_work(oWork, dat);
+
+	bool uacDialog = false;
+	/*
 	std::string pathWithName(argv[0]);
 	std::string seperator("/");
 	auto pos = pathWithName.rfind(seperator);
@@ -515,7 +551,7 @@ int main(int argc, char *argv[])
 			return 1;
 		}
 	}
-
+	*/
 #ifdef _WIN32
 	if(uacDialog && !IsElevated())
 	{

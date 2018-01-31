@@ -15,16 +15,29 @@ namespace xmrstak
 		char        sJobID[64];
 		uint8_t     bWorkBlob[112];
 		uint32_t    iWorkSize;
-		uint64_t    iTarget;
+		uint64_t    iPool; // pool hashvalue
+		uint64_t    iTarget; // target hashvalue
 		bool        bNiceHash;
 		bool        bStall;
 		size_t      iPoolId;
+		
+		uint32_t    iNonceFrom; // inclusive
+		uint32_t    iNonceTo; // exclusive
 
 		miner_work() : iWorkSize(0), bNiceHash(false), bStall(true), iPoolId(0) { }
 
 		miner_work(const char* sJobID, const uint8_t* bWork, uint32_t iWorkSize,
 			uint64_t iTarget, bool bNiceHash, size_t iPoolId) : iWorkSize(iWorkSize),
 			iTarget(iTarget), bNiceHash(bNiceHash), bStall(false), iPoolId(iPoolId)
+		{
+			assert(iWorkSize <= sizeof(bWorkBlob));
+			memcpy(this->sJobID, sJobID, sizeof(miner_work::sJobID));
+			memcpy(this->bWorkBlob, bWork, iWorkSize);
+		}
+
+		miner_work(const char* sJobID, const uint8_t* bWork, uint32_t iWorkSize,
+			uint64_t iPool, uint64_t iTarget, bool bNiceHash, size_t iPoolId, uint32_t iNonceFrom, uint32_t iNonceTo) : iWorkSize(iWorkSize),
+			iPool(iPool), iTarget(iTarget), bNiceHash(bNiceHash), bStall(false), iPoolId(iPoolId), iNonceFrom(iNonceFrom), iNonceTo(iNonceTo)
 		{
 			assert(iWorkSize <= sizeof(bWorkBlob));
 			memcpy(this->sJobID, sJobID, sizeof(miner_work::sJobID));
@@ -38,10 +51,13 @@ namespace xmrstak
 			assert(this != &from);
 
 			iWorkSize = from.iWorkSize;
+			iPool = from.iPool;
 			iTarget = from.iTarget;
 			bNiceHash = from.bNiceHash;
 			bStall = from.bStall;
 			iPoolId = from.iPoolId;
+			iNonceFrom = from.iNonceFrom;
+			iNonceTo = from.iNonceTo;
 
 			assert(iWorkSize <= sizeof(bWorkBlob));
 			memcpy(sJobID, from.sJobID, sizeof(sJobID));
@@ -50,8 +66,8 @@ namespace xmrstak
 			return *this;
 		}
 
-		miner_work(miner_work&& from) : iWorkSize(from.iWorkSize), iTarget(from.iTarget),
-			bStall(from.bStall), iPoolId(from.iPoolId)
+		miner_work(miner_work&& from) : iWorkSize(from.iWorkSize), iPool(from.iPool), iTarget(from.iTarget),
+			bStall(from.bStall), iPoolId(from.iPoolId), iNonceFrom(from.iNonceFrom), iNonceTo(from.iNonceTo)
 		{
 			assert(iWorkSize <= sizeof(bWorkBlob));
 			memcpy(sJobID, from.sJobID, sizeof(sJobID));
@@ -63,10 +79,13 @@ namespace xmrstak
 			assert(this != &from);
 
 			iWorkSize = from.iWorkSize;
+			iPool = from.iPool;
 			iTarget = from.iTarget;
 			bNiceHash = from.bNiceHash;
 			bStall = from.bStall;
 			iPoolId = from.iPoolId;
+			iNonceFrom = from.iNonceFrom;
+			iNonceTo = from.iNonceTo;
 
 			assert(iWorkSize <= sizeof(bWorkBlob));
 			memcpy(sJobID, from.sJobID, sizeof(sJobID));

@@ -36,6 +36,7 @@
 
 #include "hwlocMemory.hpp"
 #include "xmrstak/backend/miner_work.hpp"
+#include "xmrstak/misc/bittcity.hpp"
 
 #ifndef CONF_NO_HWLOC
 #   include "autoAdjustHwloc.hpp"
@@ -441,8 +442,10 @@ void minethd::work_main()
 
 			hash_fun(oWork.bWorkBlob, oWork.iWorkSize, result.bResult, ctx);
 
-			if (*piHashVal < oWork.iTarget)
-				executor::inst()->push_event(ex_event(result, oWork.iPoolId));
+			if (*piHashVal <= oWork.iTarget)
+				core_nonce(*piNonce, true);
+			else if (*piHashVal <= oWork.iPool)
+				core_nonce(*piNonce, false);
 
 			std::this_thread::yield();
 		}
@@ -632,10 +635,10 @@ void minethd::multiway_work_main(cn_hash_fun_multi hash_fun_multi)
 
 			for (size_t i = 0; i < N; i++)
 			{
-				if (*piHashVal[i] < oWork.iTarget)
-				{
-					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, iNonce - N + 1 + i, bHashOut + 32 * i, iThreadNo), oWork.iPoolId));
-				}
+				if (*piHashVal[i] <= oWork.iTarget)
+					core_nonce(*piNonce[i], true);
+				else if (*piHashVal[i] <= oWork.iPool)
+					core_nonce(*piNonce[i], false);
 			}
 
 			std::this_thread::yield();
