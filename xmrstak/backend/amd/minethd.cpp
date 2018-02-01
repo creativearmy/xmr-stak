@@ -35,6 +35,7 @@
 #include "xmrstak/misc/environment.hpp"
 #include "xmrstak/params.hpp"
 #include "xmrstak/backend/cpu/hwlocMemory.hpp"
+#include "xmrstak/misc/bittcity.hpp"
 
 #include <assert.h>
 #include <cmath>
@@ -201,8 +202,8 @@ void minethd::work_main()
 			 * raison d'etre of this software it us sensible to just wait until we have something
 			 */
 
-			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			//while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+			//	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 			consume_work();
 			continue;
@@ -218,12 +219,13 @@ void minethd::work_main()
 		if(oWork.bNiceHash)
 			pGpuCtx->Nonce = *(uint32_t*)(oWork.bWorkBlob + 39);
 
-		while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+		while(true) //globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
 			//Allocate a new nonce every 16 rounds
 			if((round_ctr++ & 0xF) == 0)
 			{
-				globalStates::inst().calc_start_nonce(pGpuCtx->Nonce, oWork.bNiceHash, h_per_round * 16);
+				// no more nonce to work on, quiting
+				if (!globalStates::inst().calc_start_nonce(pGpuCtx->Nonce, oWork.bNiceHash, h_per_round * 16)) break;
 			}
 
 			cl_uint results[0x100];
@@ -242,10 +244,14 @@ void minethd::work_main()
 				*(uint32_t*)(bWorkBlob + 39) = results[i];
 
 				hash_fun(bWorkBlob, oWork.iWorkSize, bResult, cpu_ctx);
-				if ( (*((uint64_t*)(bResult + 24))) < oWork.iTarget)
-					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, results[i], bResult, iThreadNo), oWork.iPoolId));
-				else
-					executor::inst()->push_event(ex_event("AMD Invalid Result", oWork.iPoolId));
+				//if ( (*((uint64_t*)(bResult + 24))) < oWork.iTarget)
+				//	executor::inst()->push_event(ex_event(job_result(oWork.sJobID, results[i], bResult, iThreadNo), oWork.iPoolId));
+				//else
+				//	executor::inst()->push_event(ex_event("AMD Invalid Result", oWork.iPoolId));
+				if ((*((uint64_t*)(bResult + 24))) <= oWork.iTarget)
+					core_nonce(results[i], true);
+				else if ((*((uint64_t*)(bResult + 24))) <= oWork.iPool)
+					core_nonce(results[i], false);
 			}
 
 			iCount += pGpuCtx->rawIntensity;
@@ -254,8 +260,8 @@ void minethd::work_main()
 			iTimestamp.store(iStamp, std::memory_order_relaxed);
 			std::this_thread::yield();
 		}
-
-		consume_work();
+		break;
+		//consume_work();
 	}
 }
 

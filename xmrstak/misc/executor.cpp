@@ -357,6 +357,9 @@ void executor::on_sock_error(size_t pool_id, std::string&& sError, bool silent)
 
 void executor::on_pool_have_job(size_t pool_id, pool_job& oPoolJob)
 {
+	// pool feature disabled, work with bittcity instead
+	return;
+
 	if(pool_id != current_pool_id)
 		return;
 

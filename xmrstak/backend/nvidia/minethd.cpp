@@ -34,6 +34,7 @@
 #include "xmrstak/backend/cpu/hwlocMemory.hpp"
 #include "xmrstak/backend/cryptonight.hpp"
 #include "xmrstak/misc/utility.hpp"
+#include "xmrstak/misc/bittcity.hpp"
 
 #include <assert.h>
 #include <cmath>
@@ -238,8 +239,8 @@ void minethd::work_main()
 			 * raison d'etre of this software it us sensible to just wait until we have something
 			 */
 
-			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			//while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+			//	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 			consume_work();
 			continue;
@@ -250,17 +251,18 @@ void minethd::work_main()
 		uint32_t h_per_round = ctx.device_blocks * ctx.device_threads;
 		size_t round_ctr = 0;
 
-		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
+		//assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 
 		if(oWork.bNiceHash)
 			iNonce = *(uint32_t*)(oWork.bWorkBlob + 39);
 
-		while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+		while(true) //globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
 			//Allocate a new nonce every 16 rounds
 			if((round_ctr++ & 0xF) == 0)
 			{
-				globalStates::inst().calc_start_nonce(iNonce, oWork.bNiceHash, h_per_round * 16);
+				// no more nonce to work on, quiting
+				if (!globalStates::inst().calc_start_nonce(iNonce, oWork.bNiceHash, h_per_round * 16)) break;
 			}
 			
 			uint32_t foundNonce[10];
@@ -270,7 +272,7 @@ void minethd::work_main()
 
 			cryptonight_core_cpu_hash(&ctx, mineMonero);
 
-			cryptonight_extra_cpu_final(&ctx, iNonce, oWork.iTarget, &foundCount, foundNonce);
+			cryptonight_extra_cpu_final(&ctx, iNonce, oWork.iPool, &foundCount, foundNonce);
 
 			for(size_t i = 0; i < foundCount; i++)
 			{
@@ -284,10 +286,14 @@ void minethd::work_main()
 				*(uint32_t*)(bWorkBlob + 39) = foundNonce[i];
 
 				hash_fun(bWorkBlob, oWork.iWorkSize, bResult, cpu_ctx);
-				if ( (*((uint64_t*)(bResult + 24))) < oWork.iTarget)
-					executor::inst()->push_event(ex_event(job_result(oWork.sJobID, foundNonce[i], bResult, iThreadNo), oWork.iPoolId));
-				else
-					executor::inst()->push_event(ex_event("NVIDIA Invalid Result", oWork.iPoolId));
+				//if ( (*((uint64_t*)(bResult + 24))) < oWork.iTarget)
+				//	executor::inst()->push_event(ex_event(job_result(oWork.sJobID, foundNonce[i], bResult, iThreadNo), oWork.iPoolId));
+				//else
+				//	executor::inst()->push_event(ex_event("NVIDIA Invalid Result", oWork.iPoolId));
+				if ((*((uint64_t*)(bResult + 24))) <= oWork.iTarget)
+					core_nonce(foundNonce[i], true);
+				else if ((*((uint64_t*)(bResult + 24))) <= oWork.iPool)
+					core_nonce(foundNonce[i], false);
 			}
 
 			iCount += h_per_round;
@@ -299,8 +305,8 @@ void minethd::work_main()
 			iTimestamp.store(iStamp, std::memory_order_relaxed);
 			std::this_thread::yield();
 		}
-
-		consume_work();
+		break;
+		//consume_work();
 	}
 }
 

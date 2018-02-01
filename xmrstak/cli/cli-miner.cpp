@@ -327,8 +327,10 @@ int main(int argc, char *argv[])
 
 	using namespace xmrstak;
 
-	// TO TEST: 2330200000 2330240960 10000 77448012271 BganjajTBdCr2u2OzVyqoBBHm+6e3dB1yH8cQ5tCj8JfWgK1IyDeAAAAAPEXmHxjMcNllLlsTXzg+JBon844Fuqvxn8P+uL5Vn6RAw==
 	// argv: work_id, nonce_from, nonce_to(excluding), pool_difficulty, target_difficulty, blobdata
+
+	// TO TEST: o15174630602235469818 2723102720 2723143680 10000 93003850668 BgaTzMrTBSUNhKYnyWSBp12pTtnYGnLWAM7K5+yRNNlzVJMVe7v4AAAAAEI7z9LXPIdPWLxH9r7c+x04X+v86zmb2K7q7umHm7OwCw==
+	// FOUND:  "nonces" : [2723105013, 2723109195]
 
 	char* work_id = argv[1];
 
@@ -352,7 +354,7 @@ int main(int argc, char *argv[])
 	// const char* sJobID, const uint8_t* bWork, uint32_t iWorkSize, 
 	// uint64_t iPool, uint64_t iTarget, 
 	// bool bNiceHash, size_t iPoolId, uint32_t iNonceFrom, uint32_t iNonceTo
-	xmrstak::miner_work oWork = xmrstak::miner_work(work_id, blob, sizeof(blob),
+	xmrstak::miner_work oWork = xmrstak::miner_work(work_id, blob, blob_bin.length(),
 		jpsock::diff_to_t64(pool_difficulty), jpsock::diff_to_t64(target_difficulty), 
 		false, 0, nonce_from, nonce_to);
 

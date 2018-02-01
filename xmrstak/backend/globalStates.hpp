@@ -34,12 +34,15 @@ struct globalStates
 	//pool_data is in-out winapi style
 	void switch_work(miner_work& pWork, pool_data& dat);
 
-	inline void calc_start_nonce(uint32_t& nonce, bool use_nicehash, uint32_t reserve_count)
+	inline bool calc_start_nonce(uint32_t& nonce, bool use_nicehash, uint32_t reserve_count)
 	{
 		if(use_nicehash)
 			nonce = (nonce & 0xFF000000) | iGlobalNonce.fetch_add(reserve_count);
 		else
 			nonce = iGlobalNonce.fetch_add(reserve_count);
+
+		if (nonce >= oGlobalWork.iNonceTo) return false;
+		return true;
 	}
 
 	miner_work oGlobalWork;

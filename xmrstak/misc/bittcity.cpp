@@ -78,61 +78,53 @@ namespace xmrstak
 	bool socket_send(std::string data)
 	{
 #ifdef _WIN32
-		WSADATA         wsd;            //WSADATA变量  
-		SOCKET          sHost;          //服务器套接字  
-		SOCKADDR_IN     servAddr;       //服务器地址  
-		int             retVal;         //返回值  
+		WSADATA         wsd;
+		SOCKET          sHost;
+		SOCKADDR_IN     servAddr;
+		int             retVal;
 
-										//初始化套结字动态库  
 		if (WSAStartup(MAKEWORD(2, 2), &wsd) != 0)
 		{
 			cout << "WSAStartup failed!" << endl;
 			return false;
 		}
 
-		//创建套接字  
 		sHost = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 		if (INVALID_SOCKET == sHost)
 		{
 			cout << "socket failed!" << endl;
-			WSACleanup();//释放套接字资源  
+			WSACleanup();
 			return  false;
 		}
 
-		//设置服务器地址  
 		servAddr.sin_family = AF_INET;
 		servAddr.sin_addr.s_addr = inet_addr(CORE_MANAGER_IP);
 		servAddr.sin_port = htons((short)CORE_MANAGER_PORT);
 		int nServAddlen = sizeof(servAddr);
 
-		//连接服务器  
 		retVal = connect(sHost, (LPSOCKADDR)&servAddr, sizeof(servAddr));
 		if (SOCKET_ERROR == retVal)
 		{
 			cout << "connect failed!" << endl;
-			closesocket(sHost); //关闭套接字  
-			WSACleanup();       //释放套接字资源  
+			closesocket(sHost);
+			WSACleanup();
 			return -1;
 		}
-		while (true) {
-			//向服务器发送数据  
-			retVal = send(sHost, data.c_str(), data.size(), 0);
-			if (SOCKET_ERROR == retVal)
-			{
-				cout << "send failed!" << endl;
-				closesocket(sHost); //关闭套接字  
-				WSACleanup();       //释放套接字资源  
-				return false;
-			}
-
-			//RecvLine(sHost, bufRecv);  
-			//recv(sHost, bufRecv, 5, 0);     // 接收服务器端的数据， 只接收5个字符  
-			//cout << endl << "从服务器接收数据：" << bufRecv;
-
+		
+		retVal = send(sHost, data.c_str(), data.size(), 0);
+		if (SOCKET_ERROR == retVal)
+		{
+			cout << "send failed!" << endl;
+			closesocket(sHost);
+			WSACleanup();
+			return false;
 		}
-		//退出  
-		closesocket(sHost); //关闭套接字  
-		WSACleanup();       //释放套接字资源  
+
+		//RecvLine(sHost, bufRecv);  
+		//recv(sHost, bufRecv, 5, 0);
+		
+		closesocket(sHost);
+		WSACleanup();
 		return true;
 #endif
 	}

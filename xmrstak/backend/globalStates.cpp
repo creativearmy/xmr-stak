@@ -49,6 +49,7 @@ void globalStates::switch_work(miner_work& pWork, pool_data& dat)
 
 	dat.iSavedNonce = iGlobalNonce.exchange(dat.iSavedNonce, std::memory_order_seq_cst);
 	oGlobalWork = pWork;
+	iGlobalNonce = pWork.iNonceFrom;
 	iConsumeCnt.store(0, std::memory_order_seq_cst);
 	iGlobalJobNo++;
 }

@@ -449,7 +449,8 @@ bool jpsock::connect(std::string& sConnectError)
 	{
 		bRunning = true;
 		disconnect_time = 0;
-		oRecvThd = new std::thread(&jpsock::jpsock_thread, this);
+        // pool feature disabled, work with bittcity instead
+		//oRecvThd = new std::thread(&jpsock::jpsock_thread, this);
 		return true;
 	}
 

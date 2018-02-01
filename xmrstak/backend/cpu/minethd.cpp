@@ -408,8 +408,8 @@ void minethd::work_main()
 			 * raison d'etre of this software it us sensible to just wait until we have something
 			 */
 
-			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			//while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+			//	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 			consume_work();
 			continue;
@@ -418,13 +418,13 @@ void minethd::work_main()
 		size_t nonce_ctr = 0;
 		constexpr size_t nonce_chunk = 4096; // Needs to be a power of 2
 
-		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
+		//assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 		memcpy(result.sJobID, oWork.sJobID, sizeof(job_result::sJobID));
 
 		if(oWork.bNiceHash)
 			result.iNonce = *piNonce;
 
-		while(globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+		while(true) //globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
 			if ((iCount++ & 0xF) == 0) //Store stats every 16 hashes
 			{
@@ -435,7 +435,8 @@ void minethd::work_main()
 
 			if((nonce_ctr++ & (nonce_chunk-1)) == 0)
 			{
-				globalStates::inst().calc_start_nonce(result.iNonce, oWork.bNiceHash, nonce_chunk);
+				// no more nonce to work on, quiting
+				if (!globalStates::inst().calc_start_nonce(result.iNonce, oWork.bNiceHash, nonce_chunk)) break;
 			}
 
 			*piNonce = ++result.iNonce;
@@ -449,8 +450,8 @@ void minethd::work_main()
 
 			std::this_thread::yield();
 		}
-
-		consume_work();
+		break;
+		//consume_work();
 	}
 
 	cryptonight_free_ctx(ctx);
@@ -596,8 +597,8 @@ void minethd::multiway_work_main(cn_hash_fun_multi hash_fun_multi)
 			either because of network latency, or a socket problem. Since we are
 			raison d'etre of this software it us sensible to just wait until we have something*/
 
-			while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			//while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+			//	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 			consume_work();
 			prep_multiway_work<N>(bWorkBlob, piNonce);
@@ -607,12 +608,12 @@ void minethd::multiway_work_main(cn_hash_fun_multi hash_fun_multi)
 		constexpr uint32_t nonce_chunk = 4096;
 		int64_t nonce_ctr = 0;
 
-		assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
+		//assert(sizeof(job_result::sJobID) == sizeof(pool_job::sJobID));
 
 		if(oWork.bNiceHash)
 			iNonce = *piNonce[0];
 
-		while (globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
+		while (true) //globalStates::inst().iGlobalJobNo.load(std::memory_order_relaxed) == iJobNo)
 		{
 			if ((iCount++ & 0x7) == 0)  //Store stats every 8*N hashes
 			{
@@ -624,7 +625,8 @@ void minethd::multiway_work_main(cn_hash_fun_multi hash_fun_multi)
 			nonce_ctr -= N;
 			if(nonce_ctr <= 0)
 			{
-				globalStates::inst().calc_start_nonce(iNonce, oWork.bNiceHash, nonce_chunk);
+				// no more nonce to work on, quiting
+				if (!globalStates::inst().calc_start_nonce(iNonce, oWork.bNiceHash, nonce_chunk)) break;
 				nonce_ctr = nonce_chunk;
 			}
 
@@ -643,9 +645,9 @@ void minethd::multiway_work_main(cn_hash_fun_multi hash_fun_multi)
 
 			std::this_thread::yield();
 		}
-
-		consume_work();
-		prep_multiway_work<N>(bWorkBlob, piNonce);
+		break;
+		//consume_work();
+		//prep_multiway_work<N>(bWorkBlob, piNonce);
 	}
 
 	for (int i = 0; i < N; i++)
