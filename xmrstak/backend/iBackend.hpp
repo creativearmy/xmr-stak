@@ -42,8 +42,11 @@ namespace xmrstak
 		uint32_t iThreadNo;
 		BackendType backendType = UNKNOWN;
 
+		bool bDone;
+
 		iBackend() : iHashCount(0), iTimestamp(0)
 		{
+			bDone = false;
 		}
 	};
 

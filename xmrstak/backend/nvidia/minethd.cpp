@@ -305,6 +305,8 @@ void minethd::work_main()
 			iTimestamp.store(iStamp, std::memory_order_relaxed);
 			std::this_thread::yield();
 		}
+
+		bDone = true;
 		break;
 		//consume_work();
 	}

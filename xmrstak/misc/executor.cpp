@@ -69,9 +69,10 @@ void executor::ex_clock_thd()
 
 		push_event(ex_event(EV_PERF_TICK));
 
+		// pool feature disabled, work with bittcity instead
 		//Eval pool choice every fourth tick
-		if((tick++ & 0x03) == 0)
-			push_event(ex_event(EV_EVAL_POOL_CHOICE));
+		//if((tick++ & 0x03) == 0)
+		//	push_event(ex_event(EV_EVAL_POOL_CHOICE));
 
 		// Service timed events
 		std::unique_lock<std::mutex> lck(timed_event_mutex);
@@ -571,9 +572,13 @@ void executor::ex_main()
 		push_timed_event(ex_event(EV_HASHRATE_LOOP), jconf::inst()->GetAutohashTime());
 
 	size_t cnt = 0;
+	bool allDone = true;
 	while (true)
 	{
 		ev = oEventQ.pop();
+
+		printer::inst()->print_msg(L0, "executor::ex_main oEventQ.pop:%d pvThreads.size:%d", ev.iName, pvThreads->size());
+
 		switch (ev.iName)
 		{
 		case EV_SOCK_READY:
@@ -601,9 +606,17 @@ void executor::ex_main()
 			break;
 
 		case EV_PERF_TICK:
+			allDone = true;
 			for (i = 0; i < pvThreads->size(); i++)
+			{
 				telem->push_perf_value(i, pvThreads->at(i)->iHashCount.load(std::memory_order_relaxed),
-				pvThreads->at(i)->iTimestamp.load(std::memory_order_relaxed));
+					pvThreads->at(i)->iTimestamp.load(std::memory_order_relaxed));
+
+				if (!pvThreads->at(i)->bDone) allDone = false;
+			}
+
+			// at this clock event, check if all threads done computing, if so, quit main
+			if (allDone) win_exit();
 
 			if((cnt++ & 0xF) == 0) //Every 16 ticks
 			{

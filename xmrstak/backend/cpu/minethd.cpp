@@ -450,6 +450,8 @@ void minethd::work_main()
 
 			std::this_thread::yield();
 		}
+
+		bDone = true;
 		break;
 		//consume_work();
 	}
@@ -645,6 +647,8 @@ void minethd::multiway_work_main(cn_hash_fun_multi hash_fun_multi)
 
 			std::this_thread::yield();
 		}
+		
+		bDone = true;
 		break;
 		//consume_work();
 		//prep_multiway_work<N>(bWorkBlob, piNonce);
