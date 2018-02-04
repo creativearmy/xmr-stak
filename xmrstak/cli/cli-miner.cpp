@@ -337,6 +337,8 @@ int main(int argc, char *argv[])
 	uint32_t nonce_from;  sscanf(argv[2], "%u", &nonce_from);
 	uint32_t nonce_to;  sscanf(argv[3], "%u", &nonce_to);
 
+	core_nonce_from = nonce_from;
+
 	uint64_t pool_difficulty;  sscanf(argv[4], "%llu", &pool_difficulty);
 	uint64_t target_difficulty;  sscanf(argv[5], "%llu", &target_difficulty);
 

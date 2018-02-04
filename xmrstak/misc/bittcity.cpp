@@ -19,6 +19,9 @@ using namespace std;
 
 namespace xmrstak
 {
+	uint32_t core_nonce_count = 0;
+	uint32_t core_nonce_from = 0;
+
 	// hexdump source: http://stahlworks.com/dev/index.php?tool=csc01
 	void hexdump(void *pAddressIn, long  lSize)
 	{
@@ -131,6 +134,8 @@ namespace xmrstak
 	
 	void core_nonce(uint32_t nonce, bool eureka)
 	{
+		core_nonce_count++;
+
 		// Found nonce! Send  IPC over to Core Manager, to be forwarded to Node Agent and P2P Node if eureka set
 		rapidjson::Document json;
 		json.SetObject();
@@ -162,7 +167,7 @@ namespace xmrstak
 		socket_send(stringified);
 	}
 	
-	void core_done(uint32_t nonce_from, uint32_t nonce_count)
+	void core_done()
 	{
 		// Before quit, send notification to Core Manager
 		rapidjson::Document json;
@@ -176,10 +181,10 @@ namespace xmrstak
 		value_str.SetString("done", strlen("done"));
 		json.AddMember("act", value_str, json.GetAllocator());
 
-		value_num.SetUint(nonce_from);
+		value_num.SetUint(core_nonce_from);
 		json.AddMember("nonce_from", value_num, json.GetAllocator());
 
-		value_num.SetInt(nonce_count);
+		value_num.SetInt(core_nonce_count);
 		json.AddMember("count", value_num, json.GetAllocator());
 
 		// Serialize the JSON object

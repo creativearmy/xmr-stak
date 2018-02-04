@@ -30,7 +30,16 @@ struct plugin
 	plugin(const std::string backendName, const std::string libName) : fn_starterBackend(nullptr), m_backendName(backendName)
 	{
 #ifdef WIN32
+		// GetErrorMode() only exists on Vista and higher,
+		// call SetErrorMode() twice to achieve the same effect.
+		UINT oldErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
+		SetErrorMode(oldErrorMode | SEM_FAILCRITICALERRORS);
+
 		libBackend = LoadLibrary(TEXT((libName + ".dll").c_str()));
+
+		// Restore previous error mode.
+		SetErrorMode(oldErrorMode);
+
 		if(!libBackend)
 		{
 			std::cerr << "WARNING: "<< m_backendName <<" cannot load backend library: " << (libName + ".dll") << std::endl;

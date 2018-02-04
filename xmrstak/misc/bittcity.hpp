@@ -9,11 +9,14 @@ namespace xmrstak
 	*/
 	void hexdump(void *pAddressIn, long  lSize);
 	
+	extern uint32_t core_nonce_count;
+	extern uint32_t core_nonce_from;
+
 	// notify CoreManager of new nonce find
 	void core_nonce(uint32_t nonce, bool eureka);
 
-	// advisory, not used
-	void core_done(uint32_t nonce_from, uint32_t nonce_count);
+	// notify CoreManager of quitting
+	void core_done();
 
 	// base64* related routines
 	//

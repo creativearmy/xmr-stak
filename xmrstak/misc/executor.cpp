@@ -36,6 +36,7 @@
 #include "xmrstak/donate-level.hpp"
 #include "xmrstak/version.hpp"
 #include "xmrstak/http/webdesign.hpp"
+#include "xmrstak/misc/bittcity.hpp"
 
 #include <thread>
 #include <string>
@@ -616,7 +617,13 @@ void executor::ex_main()
 			}
 
 			// at this clock event, check if all threads done computing, if so, quit main
-			if (allDone) win_exit();
+			if (allDone) {
+
+				// notify core manager
+				xmrstak::core_done();
+
+				win_exit();
+			}
 
 			if((cnt++ & 0xF) == 0) //Every 16 ticks
 			{
