@@ -568,7 +568,7 @@ void executor::ex_main()
 	vMineResults.emplace_back();
 
 	// If the user requested it, start the autohash printer
-	if(jconf::inst()->GetVerboseLevel() >= 4)
+	//if(jconf::inst()->GetVerboseLevel() >= 4)
 		push_timed_event(ex_event(EV_HASHRATE_LOOP), jconf::inst()->GetAutohashTime());
 
 	size_t cnt = 0;
@@ -950,10 +950,17 @@ void executor::connection_report(std::string& out)
 void executor::print_report(ex_event_name ev)
 {
 	std::string out;
-	switch(ev)
+	FILE* logfile;
+	switch (ev)
 	{
 	case EV_USR_HASHRATE:
 		hashrate_report(out);
+		logfile = fopen("hashrate.txt", "w");
+		if (logfile != nullptr)
+		{
+			fputs(out.c_str(), logfile);
+			fclose(logfile);
+		}
 		break;
 
 	case EV_USR_RESULTS:

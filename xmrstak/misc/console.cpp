@@ -231,8 +231,8 @@ void win_exit(size_t code)
 	getenv_s(&envSize, nullptr, 0, "XMRSTAK_NOWAIT");
 	if(envSize == 0)
 	{
-		printer::inst()->print_str("Press any key to exit.");
-		get_key();
+		//printer::inst()->print_str("Press any key to exit.");
+		//get_key();
 	}
 	std::exit(code);
 }
