@@ -12,7 +12,12 @@
 
 #ifdef _WIN32
 #include "winsock2.h"  
-#pragma comment(lib, "ws2_32.lib")  
+#pragma comment(lib, "ws2_32.lib")
+#else
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <netinet/in.h>
 #endif
 
 using namespace std;
@@ -80,6 +85,9 @@ namespace xmrstak
 
 	bool socket_send(std::string data)
 	{
+	
+		cout << "socket_send: " << data << endl;
+		
 #ifdef _WIN32
 		WSADATA         wsd;
 		SOCKET          sHost;
@@ -129,6 +137,38 @@ namespace xmrstak
 		closesocket(sHost);
 		WSACleanup();
 		return true;
+		
+#else
+    	struct sockaddr_in address;
+    	int sock = 0, valread;
+    	struct sockaddr_in serv_addr;
+    	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    	{
+			cout << "Socket creation error!" << endl;
+        	return false;
+    	}
+  
+    	memset(&serv_addr, '0', sizeof(serv_addr));
+  
+    	serv_addr.sin_family = AF_INET;
+    	serv_addr.sin_port = htons(CORE_MANAGER_PORT);
+      
+    	// Convert IPv4 and IPv6 addresses from text to binary form
+    	if (inet_pton(AF_INET, CORE_MANAGER_IP, &serv_addr.sin_addr) <= 0)
+    	{
+			cout << "Invalid address/ Address not supported" << endl;
+        	return false;
+    	}
+  
+    	if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    	{
+			cout << "Connection Failed" << endl;
+        	return false;
+    	}
+		
+    	send(sock, data.c_str(), data.size(), 0);
+		close(sock);
+    	return true;		
 #endif
 	}
 	
